@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:dbms/pages/admin_page.dart';
 import 'package:dbms/pages/register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -128,6 +129,19 @@ class _LoginPageState extends State<LoginPage> {
                         padding: const EdgeInsets.symmetric(vertical: 15),
                       ),
                       child: const Text('Go to Register'),
+                    ),
+                  ),
+                  SizedBox(height: 8.0,),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context)=> AdminPage()));
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                      ),
+                      child: const Text('Login as Admin'),
                     ),
                   ),
                 ],
