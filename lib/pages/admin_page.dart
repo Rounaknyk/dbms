@@ -18,12 +18,13 @@ class _AdminPageState extends State<AdminPage> {
   String employeeName = '';
   List<EmployeeModel> addedEmpolyee = [];
   EmployeeModel? selectedEmployee = null;
-  List<StaffModel> staffList = dummyStaffList;
+  List<Widget> staffList = [];
+
 
   addStaffDialog(){
     showDialog(context: context, builder: (context){
 
-      return StatefulBuilder(builder: (context, setState){
+      return StatefulBuilder(builder: (context, setStateDialog){
 
         return Material(
           color: Colors.transparent,
@@ -66,7 +67,12 @@ class _AdminPageState extends State<AdminPage> {
                       DropdownMenu(dropdownMenuEntries: dummyDepartments.map((e){
 
                         return DropdownMenuEntry(value: e.name, label: e.name);
-                      }).toList(), hintText: 'Choose Department',),
+                      }).toList(), hintText: 'Choose Department', onSelected: (value){
+                        setState((){
+                          departmentName = value!;
+                        });
+                        setStateDialog((){});
+                      },),
                       SizedBox(height: 16.0,),
                       Row(
                         children: [
@@ -78,6 +84,8 @@ class _AdminPageState extends State<AdminPage> {
                             setState((){
                               selectedEmployee = value!;
                             });
+                            setStateDialog((){});
+
                           },),
                           SizedBox(width: 16.0,),
                           Checkbox(value: checkManager, onChanged: (value){
@@ -85,6 +93,8 @@ class _AdminPageState extends State<AdminPage> {
                             setState(() {
                               checkManager = value!;
                             });
+                            setStateDialog((){});
+
                           },),
                           SizedBox(width: 8.0,),
                           Text('Manager'),
@@ -99,6 +109,8 @@ class _AdminPageState extends State<AdminPage> {
 
                                 addedEmpolyee = set.toList();
                               });
+                            setStateDialog((){});
+
                           }, child: Text('Add Employee'), ),
                         ],
                       ),
@@ -113,6 +125,8 @@ class _AdminPageState extends State<AdminPage> {
                             setState((){
                               addedEmpolyee.remove(e);
                             });
+                            setStateDialog((){});
+
                           },), subtitle: Text(e.email),), color: e.isManager ? Colors.green : Colors.white,);
                         }).toList(),
                       ),
@@ -125,10 +139,46 @@ class _AdminPageState extends State<AdminPage> {
                               managerList.add(e);
                           }
                           StaffModel sm = StaffModel(department: departmentName, empList: addedEmpolyee, managerList: managerList, staffId: DateTime.timestamp().millisecondsSinceEpoch, staffName: _staffNameController.text);
+                          print(sm.toString());
+                          // setState((){
+                          //   staffList.add(sm);
+                          // });
+                          Size size = MediaQuery.of(context).size;
 
-                          setState((){
-                            staffList.add(sm);
+                          staffList.add(
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Material(
+                                  elevation: 5,
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: Container(
+                                    padding: EdgeInsets.all(8.0),
+                                    height: size.height * 0.3,
+                                    width: size.width * 0.2,
+                                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),),
+                                    child: Center(child: Column(
+                                      children: [
+                                        Text('${sm.staffName}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                                        Spacer(),
+                                        Text('Staff ID: ${sm.staffId}'),
+                                        SizedBox(height: 8.0,),
+                                        Text('Department: ${sm.department}'),
+                                        SizedBox(height: 8.0,),
+                                        Text('Manager: ${sm.managerList.first.name}'),
+                                        Spacer(),
+                                      ],
+                                    ),),
+                                  ),
+                                ),
+                              )
+                          );
+
+                          setState(() {
+
                           });
+
+                          print(staffList.length);
+                          setStateDialog((){});
                           Navigator.pop(context);
                         },
                         child: Container(
@@ -149,10 +199,124 @@ class _AdminPageState extends State<AdminPage> {
     });
   }
 
+
+  initCards(context) {
+    Size size = MediaQuery.of(context).size;
+
+    staffList.add(Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: InkWell(
+        onTap: (){
+          addStaffDialog();
+        },
+        child: Container(
+          height: size.height * 0.3,
+          width: size.width * 0.2,
+          decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(12),),
+          child: Center(child: Icon(Icons.add, color: Colors.white, size: 30,),),
+        ),
+      ),
+    ),);
+
+    staffList.addAll(dummyStaffList.map((e){
+      Size size = MediaQuery.of(context).size;
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Material(
+          elevation: 5,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: EdgeInsets.all(8.0),
+            height: size.height * 0.3,
+            width: size.width * 0.2,
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),),
+            child: Center(child: Column(
+              children: [
+                Text('${e.staffName}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
+                Spacer(),
+                Text('Staff ID: ${e.staffId}'),
+                SizedBox(height: 8.0,),
+                Text('Department: ${e.department}'),
+                SizedBox(height: 8.0,),
+                Text('Manager: ${e.managerList.first.name}'),
+                Spacer(),
+              ],
+            ),),
+          ),
+        ),
+      );
+    }).toList());
+
+    setState(() {
+
+    });
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    // initCards(context);
+  }
+
+  bool a = true;
+
   @override
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
 
+    if(a) {
+      staffList.add(Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: InkWell(
+          onTap: () {
+            addStaffDialog();
+          },
+          child: Container(
+            height: size.height * 0.3,
+            width: size.width * 0.2,
+            decoration: BoxDecoration(
+              color: Colors.blue, borderRadius: BorderRadius.circular(12),),
+            child: Center(
+              child: Icon(Icons.add, color: Colors.white, size: 30,),),
+          ),
+        ),
+      ),);
+
+      staffList.addAll(dummyStaffList.map((e) {
+        Size size = MediaQuery
+            .of(context)
+            .size;
+        return Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Material(
+            elevation: 5,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: EdgeInsets.all(8.0),
+              height: size.height * 0.3,
+              width: size.width * 0.2,
+              decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(12),),
+              child: Center(child: Column(
+                children: [
+                  Text('${e.staffName}', style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),),
+                  Spacer(),
+                  Text('Staff ID: ${e.staffId}'),
+                  SizedBox(height: 8.0,),
+                  Text('Department: ${e.department}'),
+                  SizedBox(height: 8.0,),
+                  Text('Manager: ${e.managerList.first.name}'),
+                  Spacer(),
+                ],
+              ),),
+            ),
+          ),
+        );
+      }).toList());
+    }
+    a = false;
     return Scaffold(
       floatingActionButton: FloatingActionButton(onPressed: (){
 
@@ -163,53 +327,10 @@ class _AdminPageState extends State<AdminPage> {
       body: SafeArea(child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Container(
-          child: Wrap(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: InkWell(
-                  onTap: (){
-                    addStaffDialog();
-                  },
-                  child: Container(
-                    height: size.height * 0.3,
-                    width: size.width * 0.2,
-                    decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(12),),
-                    child: Center(child: Icon(Icons.add, color: Colors.white, size: 30,),),
-                  ),
-                ),
-              ),
-              Wrap(
-                children: staffList.map((e){
-
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Material(
-                      elevation: 5,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: EdgeInsets.all(8.0),
-                        height: size.height * 0.3,
-                        width: size.width * 0.2,
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),),
-                        child: Center(child: Column(
-                          children: [
-                            Text('${e.staffName}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                            Spacer(),
-                            Text('Staff ID: ${e.staffId}'),
-                            SizedBox(height: 8.0,),
-                            Text('Department: ${e.department}'),
-                            SizedBox(height: 8.0,),
-                            Text('Manager: ${e.managerList.first.name}'),
-                            Spacer(),
-                          ],
-                        ),),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
+          child: Center(
+            child: Wrap(
+              children: staffList
+            ),
           ),
         ),
       )),
