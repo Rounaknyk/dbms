@@ -1,7 +1,78 @@
+import 'dart:async';
+
 import 'package:dbms/constants.dart';
 import 'package:dbms/models/employee_model.dart';
 import 'package:dbms/models/staff_model.dart';
 import 'package:flutter/material.dart';
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class StaffService {
+  static Future<bool> createStaff(StaffModel staff) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${baseUrl}staff_creation.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'staffId': staff.staffId,
+          'staffName': staff.staffName,
+          'department': staff.department,
+          'employees': staff.empList.map((emp) => {
+            'employee_id': emp.id,
+            'isManager': emp.isManager,
+          }).toList(),
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      return data['status'] == 'success';
+    } catch (e) {
+      print('Error creating staff: $e');
+      return false;
+    }
+  }
+// New method to get all staff
+  static Future<List<StaffModel>> getAllStaff() async {
+    try {
+      final response = await http.get(
+        Uri.parse('${baseUrl}get_staff.php'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}'); // Add this line
+
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'success') {
+        return (data['data'] as List).map((staffData) {
+          List<EmployeeModel> employees = [];
+          for (var emp in staffData['employees']) {
+            print(emp['employee_id']);
+            employees.add(EmployeeModel(
+              id: emp['employee_id'],
+              isManager: emp['isManager'], email: emp['email'], password: emp['password'], name: emp['name'], phone: emp['phome'].toString(), dob: emp['dob'], age: emp['age'], ssn: emp['ssn'], address: emp['address'], salary: emp['salary'], role: emp['role'],
+              // You may need to add other fields based on your EmployeeModel
+            ));
+          }
+          return StaffModel(
+            staffId: int.parse(staffData['staffId'].toString()),
+            staffName: staffData['staffName'],
+            department: staffData['department'],
+            empList: employees,
+            managerList: employees.where((e) => e.isManager).toList(),
+          );
+        }).toList();
+      } else {
+        throw Exception(data['message']);
+      }
+    } catch (e) {
+      print('Error fetching staff: $e');
+      return [];
+    }
+  }
+}
+
 
 class AdminPage extends StatefulWidget {
   const AdminPage({super.key});
@@ -11,6 +82,7 @@ class AdminPage extends StatefulWidget {
 }
 
 class _AdminPageState extends State<AdminPage> {
+
 
   TextEditingController _staffNameController = TextEditingController();
   bool checkManager = false;
@@ -132,59 +204,94 @@ class _AdminPageState extends State<AdminPage> {
                       ),
                       SizedBox(height: 16.0,),
                       InkWell(
-                        onTap: (){
+                        onTap: () async {
                           List<EmployeeModel> managerList = [];
                           for(var e in addedEmpolyee){
                             if(e.isManager)
                               managerList.add(e);
                           }
-                          StaffModel sm = StaffModel(department: departmentName, empList: addedEmpolyee, managerList: managerList, staffId: DateTime.timestamp().millisecondsSinceEpoch, staffName: _staffNameController.text);
-                          print(sm.toString());
-                          // setState((){
-                          //   staffList.add(sm);
-                          // });
-                          Size size = MediaQuery.of(context).size;
 
-                          staffList.add(
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Material(
-                                  elevation: 5,
-                                  borderRadius: BorderRadius.circular(12),
-                                  child: Container(
-                                    padding: EdgeInsets.all(8.0),
-                                    height: size.height * 0.3,
-                                    width: size.width * 0.2,
-                                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),),
-                                    child: Center(child: Column(
-                                      children: [
-                                        Text('${sm.staffName}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                                        Spacer(),
-                                        Text('Staff ID: ${sm.staffId}'),
-                                        SizedBox(height: 8.0,),
-                                        Text('Department: ${sm.department}'),
-                                        SizedBox(height: 8.0,),
-                                        Text('Manager: ${sm.managerList.first.name}'),
-                                        Spacer(),
-                                      ],
-                                    ),),
-                                  ),
-                                ),
-                              )
+                          StaffModel sm = StaffModel(
+                              department: departmentName,
+                              empList: addedEmpolyee,
+                              managerList: managerList,
+                              staffId: DateTime.timestamp().millisecondsSinceEpoch,
+                              staffName: _staffNameController.text
                           );
 
-                          setState(() {
+                          // Save to database
+                          final success = await StaffService.createStaff(sm);
 
-                          });
+                          if (success) {
+                            setState(() {
+                              staffList.add(
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Material(
+                                      elevation: 5,
+                                      borderRadius: BorderRadius.circular(12),
+                                      child: Container(
+                                        padding: EdgeInsets.all(8.0),
+                                        height: MediaQuery.of(context).size.height * 0.3,
+                                        width: MediaQuery.of(context).size.width * 0.2,
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Center(
+                                          child: Column(
+                                            children: [
+                                              Text(
+                                                '${sm.staffName}',
+                                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                              ),
+                                              Spacer(),
+                                              Text('Staff ID: ${sm.staffId}'),
+                                              SizedBox(height: 8.0),
+                                              Text('Department: ${sm.department}'),
+                                              SizedBox(height: 8.0),
+                                              Text('Manager: ${sm.managerList.first.name}'),
+                                              Spacer(),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                              );
+                            });
+                            Navigator.pop(context);
 
-                          print(staffList.length);
-                          setStateDialog((){});
-                          Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Staff created successfully'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to create staff'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
                         },
                         child: Container(
-                          decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(12),),
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           padding: EdgeInsets.all(16.0),
-                          child: Center(child: Text('Save Staff', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),)),
+                          child: Center(
+                            child: Text(
+                              'Save Staff',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                       SizedBox(height: 16.0,),
@@ -199,63 +306,109 @@ class _AdminPageState extends State<AdminPage> {
     });
   }
 
+  bool isLoading = false;
 
-  initCards(context) {
-    Size size = MediaQuery.of(context).size;
+  Future<void> loadStaffData() async {
+    setState(() {
+      isLoading = true;
+      staffList.clear();
+    });
 
-    staffList.add(Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: InkWell(
-        onTap: (){
-          addStaffDialog();
-        },
-        child: Container(
-          height: size.height * 0.3,
-          width: size.width * 0.2,
-          decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(12),),
-          child: Center(child: Icon(Icons.add, color: Colors.white, size: 30,),),
-        ),
-      ),
-    ),);
-
-    staffList.addAll(dummyStaffList.map((e){
-      Size size = MediaQuery.of(context).size;
-      return Padding(
+    // Add the "Add Staff" card first
+    staffList.add(
+      Padding(
         padding: const EdgeInsets.all(8.0),
-        child: Material(
-          elevation: 5,
-          borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () {
+            addStaffDialog();
+          },
           child: Container(
-            padding: EdgeInsets.all(8.0),
-            height: size.height * 0.3,
-            width: size.width * 0.2,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),),
-            child: Center(child: Column(
-              children: [
-                Text('${e.staffName}', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),),
-                Spacer(),
-                Text('Staff ID: ${e.staffId}'),
-                SizedBox(height: 8.0,),
-                Text('Department: ${e.department}'),
-                SizedBox(height: 8.0,),
-                Text('Manager: ${e.managerList.first.name}'),
-                Spacer(),
-              ],
-            ),),
+            height: MediaQuery.of(context).size.height * 0.3,
+            width: MediaQuery.of(context).size.width * 0.2,
+            decoration: BoxDecoration(
+              color: Colors.blue,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
           ),
         ),
+      ),
+    );
+
+    try {
+      final staffData = await StaffService.getAllStaff();
+
+      final staffWidgets = staffData.map((staff) =>
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Material(
+              elevation: 5,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                height: MediaQuery.of(context).size.height * 0.3,
+                width: MediaQuery.of(context).size.width * 0.2,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Text(
+                        staff.staffName,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const Spacer(),
+                      Text('Staff ID: ${staff.staffId}'),
+                      const SizedBox(height: 8.0),
+                      Text('Department: ${staff.department}'),
+                      const SizedBox(height: 8.0),
+                      if (staff.managerList.isNotEmpty)
+                        Text('Manager: ${staff.managerList.first.name}')
+                      else
+                        const Text('No Manager Assigned'),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ).toList();
+
+      setState(() {
+        staffList.addAll(staffWidgets);
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error loading staff data: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
-    }).toList());
-
-    setState(() {
-
-    });
+    }
   }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
+    Timer(Duration(seconds: 1), (){
+      loadStaffData();
+    });
+
     // initCards(context);
   }
 
@@ -265,66 +418,13 @@ class _AdminPageState extends State<AdminPage> {
   Widget build(BuildContext context) {
     Size size = MediaQuery.of(context).size;
 
-    if(a) {
-      staffList.add(Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: InkWell(
-          onTap: () {
-            addStaffDialog();
-          },
-          child: Container(
-            height: size.height * 0.3,
-            width: size.width * 0.2,
-            decoration: BoxDecoration(
-              color: Colors.blue, borderRadius: BorderRadius.circular(12),),
-            child: Center(
-              child: Icon(Icons.add, color: Colors.white, size: 30,),),
-          ),
-        ),
-      ),);
-
-      staffList.addAll(dummyStaffList.map((e) {
-        Size size = MediaQuery
-            .of(context)
-            .size;
-        return Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Material(
-            elevation: 5,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: EdgeInsets.all(8.0),
-              height: size.height * 0.3,
-              width: size.width * 0.2,
-              decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(12),),
-              child: Center(child: Column(
-                children: [
-                  Text('${e.staffName}', style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),),
-                  Spacer(),
-                  Text('Staff ID: ${e.staffId}'),
-                  SizedBox(height: 8.0,),
-                  Text('Department: ${e.department}'),
-                  SizedBox(height: 8.0,),
-                  Text('Manager: ${e.managerList.first.name}'),
-                  Spacer(),
-                ],
-              ),),
-            ),
-          ),
-        );
-      }).toList());
-    }
-    a = false;
     return Scaffold(
       floatingActionButton: FloatingActionButton(onPressed: (){
-
-
+        loadStaffData();
       }),
       appBar: AppBar(title: Text('Admin Panel'), centerTitle: false,),
       drawer: Drawer(),
-      body: SafeArea(child: Padding(
+      body: isLoading ? Center(child: CircularProgressIndicator(color: Colors.black,),) : SafeArea(child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Container(
           child: Center(

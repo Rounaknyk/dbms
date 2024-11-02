@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:dbms/pages/admin_page.dart';
 import 'package:dbms/pages/login_page.dart';
+import 'package:dbms/pages/register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 

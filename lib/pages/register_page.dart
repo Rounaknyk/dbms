@@ -84,10 +84,18 @@ class _RegisterPageState extends State<RegisterPage> {
 
       try {
         final response = await http.post(
-          Uri.parse('http://localhost/flutter_login/login.php'),
+          Uri.parse('http://localhost/dbms/php/register.php'),
           body: jsonEncode({
+            'name': _nameController.text,
             'email': _emailController.text,
             'password': _passwordController.text,
+            'phone': _phoneController.text,
+            'dob': _dobController.text,
+            'age': _ageController.text,
+            'ssn': _ssnController.text,
+            'address': _addressController.text,
+            'salary': _salaryController.text,
+            'role': _roleController.text,
           }),
           headers: {'Content-Type': 'application/json'},
         );
@@ -96,7 +104,12 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (data['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login successful!')),
+            const SnackBar(content: Text('Registration successful!')),
+          );
+          // Navigate to login page after successful registration
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => LoginPage()),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -104,8 +117,9 @@ class _RegisterPageState extends State<RegisterPage> {
           );
         }
       } catch (e) {
+        print(e);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection error')),
+          SnackBar(content: Text('Connection error: $e')),
         );
       }
 
@@ -114,6 +128,45 @@ class _RegisterPageState extends State<RegisterPage> {
       });
     }
   }
+
+  // Future<void> _login() async {
+  //   if (_formKey.currentState!.validate()) {
+  //     setState(() {
+  //       _isLoading = true;
+  //     });
+  //
+  //     try {
+  //       final response = await http.post(
+  //         Uri.parse('http://localhost/flutter_login/login.php'),
+  //         body: jsonEncode({
+  //           'email': _emailController.text,
+  //           'password': _passwordController.text,
+  //         }),
+  //         headers: {'Content-Type': 'application/json'},
+  //       );
+  //
+  //       final data = jsonDecode(response.body);
+  //
+  //       if (data['status'] == 'success') {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           const SnackBar(content: Text('Login successful!')),
+  //         );
+  //       } else {
+  //         ScaffoldMessenger.of(context).showSnackBar(
+  //           SnackBar(content: Text(data['message'])),
+  //         );
+  //       }
+  //     } catch (e) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         const SnackBar(content: Text('Connection error')),
+  //       );
+  //     }
+  //
+  //     setState(() {
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
 
   @override
   void initState() {

@@ -5,6 +5,8 @@ import 'package:dbms/pages/register_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../constants.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
@@ -26,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
 
       try {
         final response = await http.post(
-          Uri.parse('http://localhost/flutter_login/login.php'),
+          Uri.parse('${baseUrl}login.php'),
           body: jsonEncode({
             'email': _emailController.text,
             'password': _passwordController.text,
@@ -34,21 +36,44 @@ class _LoginPageState extends State<LoginPage> {
           headers: {'Content-Type': 'application/json'},
         );
 
-        final data = jsonDecode(response.body);
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
 
-        if (data['status'] == 'success') {
-          // Navigate to home page or show success message
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Login successful!')),
-          );
+          if (data['status'] == 'success') {
+            // Store user session data if needed
+            // For example, using shared_preferences:
+            // final prefs = await SharedPreferences.getInstance();
+            // await prefs.setString('user_id', data['user_id'].toString());
+
+            // Navigate to home page
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminPage()),
+            );
+
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Login successful!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('${data['message']} ERROR'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'])),
-          );
+          throw Exception('Server error');
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Connection error')),
+          const SnackBar(
+            content: Text('Connection error. Please check your internet connection.'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
 

@@ -4,6 +4,8 @@ import 'models/department_model.dart';
 import 'models/employee_model.dart';
 import 'models/staff_model.dart';
 
+final baseUrl = 'http://localhost/dbms/php/';
+
 final List<EmployeeModel> dummyEmployeeModels = [
   EmployeeModel(
     id: 1,
