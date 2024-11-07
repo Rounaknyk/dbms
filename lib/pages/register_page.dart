@@ -1,13 +1,11 @@
 import 'dart:convert';
-
-import 'package:dbms/pages/login_page.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import '../constants.dart';
+import 'login_page.dart';
 
 class RegisterPage extends StatefulWidget {
-  const RegisterPage({Key? key}) : super(key: key);
-
   @override
   _RegisterPageState createState() => _RegisterPageState();
 }
@@ -19,33 +17,28 @@ class _RegisterPageState extends State<RegisterPage> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
-  final _ageController = TextEditingController(); // New controller for age
+  final _ageController = TextEditingController();
   final _ssnController = TextEditingController();
   final _addressController = TextEditingController();
   final _salaryController = TextEditingController();
   final _roleController = TextEditingController();
 
   bool _isLoading = false;
-  DateTime selectedDate = DateTime.now();
+  DateTime _selectedDate = DateTime.now();
 
-  // New method to calculate age
   void _calculateAge(DateTime birthDate) {
     final DateTime now = DateTime.now();
     int age = now.year - birthDate.year;
-
-    // Adjust age if birthday hasn't occurred this year
-    if (now.month < birthDate.month ||
-        (now.month == birthDate.month && now.day < birthDate.day)) {
+    if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) {
       age--;
     }
-
     _ageController.text = age.toString();
   }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate,
+      initialDate: _selectedDate,
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -56,27 +49,22 @@ class _RegisterPageState extends State<RegisterPage> {
               onPrimary: Colors.white,
               onSurface: Colors.black,
             ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.blue,
-              ),
-            ),
           ),
           child: child!,
         );
       },
     );
 
-    if (picked != null && picked != selectedDate) {
+    if (picked != null && picked != _selectedDate) {
       setState(() {
-        selectedDate = picked;
+        _selectedDate = picked;
         _dobController.text = DateFormat('dd-MM-yyyy').format(picked);
-        _calculateAge(picked); // Calculate age when date is selected
+        _calculateAge(picked);
       });
     }
   }
 
-  Future<void> _login() async {
+  Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -84,7 +72,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
       try {
         final response = await http.post(
-          Uri.parse('http://localhost/dbms/php/register.php'),
+          Uri.parse('${baseUrl}register.php'),
           body: jsonEncode({
             'name': _nameController.text,
             'email': _emailController.text,
@@ -104,22 +92,29 @@ class _RegisterPageState extends State<RegisterPage> {
 
         if (data['status'] == 'success') {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Registration successful!')),
+            const SnackBar(
+              content: Text('Registration successful!'),
+              backgroundColor: Colors.green,
+            ),
           );
-          // Navigate to login page after successful registration
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => LoginPage()),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(data['message'])),
+            SnackBar(
+              content: Text(data['message']),
+              backgroundColor: Colors.red,
+            ),
           );
         }
       } catch (e) {
-        print(e);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Connection error: $e')),
+          SnackBar(
+            content: Text('Connection error: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
 
@@ -128,45 +123,6 @@ class _RegisterPageState extends State<RegisterPage> {
       });
     }
   }
-
-  // Future<void> _login() async {
-  //   if (_formKey.currentState!.validate()) {
-  //     setState(() {
-  //       _isLoading = true;
-  //     });
-  //
-  //     try {
-  //       final response = await http.post(
-  //         Uri.parse('http://localhost/flutter_login/login.php'),
-  //         body: jsonEncode({
-  //           'email': _emailController.text,
-  //           'password': _passwordController.text,
-  //         }),
-  //         headers: {'Content-Type': 'application/json'},
-  //       );
-  //
-  //       final data = jsonDecode(response.body);
-  //
-  //       if (data['status'] == 'success') {
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           const SnackBar(content: Text('Login successful!')),
-  //         );
-  //       } else {
-  //         ScaffoldMessenger.of(context).showSnackBar(
-  //           SnackBar(content: Text(data['message'])),
-  //         );
-  //       }
-  //     } catch (e) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         const SnackBar(content: Text('Connection error')),
-  //       );
-  //     }
-  //
-  //     setState(() {
-  //       _isLoading = false;
-  //     });
-  //   }
-  // }
 
   @override
   void initState() {
@@ -177,181 +133,173 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blueGrey[50],
       body: Center(
-        child: Card(
-          margin: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
           child: Container(
-            padding: const EdgeInsets.all(40),
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: Form(
-              key: _formKey,
-              child: SingleChildScrollView(
+            width: 600,
+            child: Card(
+              margin: const EdgeInsets.all(20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(30),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       'Register',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Name',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'Email',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'Password',
-                        border: OutlineInputBorder(),
-                      ),
-                      obscureText: true,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      onTap: () {
-                        _selectDate(context);
-                      },
-                      readOnly: true,
-                      controller: _dobController,
-                      decoration: const InputDecoration(
-                        labelText: 'Date of birth',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your dob';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _ageController,
-                      readOnly: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Age',
-                        border: OutlineInputBorder(),
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
                       ),
                     ),
                     const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone number',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your phone number';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _addressController,
-                      decoration: const InputDecoration(
-                        labelText: 'Address',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your address';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _salaryController,
-                      decoration: const InputDecoration(
-                        labelText: 'Salary',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your salary';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _roleController,
-                      decoration: const InputDecoration(
-                        labelText: 'Role',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your role';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    TextFormField(
-                      controller: _ssnController,
-                      decoration: const InputDecoration(
-                        labelText: 'SSN',
-                        border: OutlineInputBorder(),
-                      ),
-                      readOnly: true,
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _login,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                        ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Register'),
-                      ),
-                    ),
-                    const SizedBox(height: 8.0),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => LoginPage()));
-                        },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                        ),
-                        child: const Text('Go to Login'),
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _nameController,
+                                  labelText: 'Name',
+                                  validator: (value) => value!.isEmpty ? 'Enter your name' : null,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _emailController,
+                                  labelText: 'Email',
+                                  validator: (value) {
+                                    if (value!.isEmpty) return 'Enter your email';
+                                    if (!RegExp(r'^[\w-]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                                      return 'Enter a valid email';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _passwordController,
+                                  labelText: 'Password',
+                                  obscureText: true,
+                                  validator: (value) => value!.isEmpty ? 'Enter a password' : null,
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _phoneController,
+                                  labelText: 'Phone',
+                                  validator: (value) {
+                                    if (value!.isEmpty) return 'Enter your phone number';
+                                    if (!RegExp(r'^\d{10}$').hasMatch(value)) return 'Enter a valid 10-digit phone';
+                                    return null;
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => _selectDate(context),
+                                  child: AbsorbPointer(
+                                    child: _buildTextField(
+                                      controller: _dobController,
+                                      labelText: 'Date of Birth',
+                                      validator: (value) => value!.isEmpty ? 'Select a date' : null,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _ageController,
+                                  labelText: 'Age',
+                                  readOnly: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 20),
+                          _buildTextField(
+                            controller: _addressController,
+                            labelText: 'Address',
+                            validator: (value) => value!.isEmpty ? 'Enter your address' : null,
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _salaryController,
+                                  labelText: 'Salary',
+                                  validator: (value) {
+                                    if (value!.isEmpty) return 'Enter your salary';
+                                    if (!RegExp(r'^\d+$').hasMatch(value)) return 'Enter a valid salary';
+                                    return null;
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              Expanded(
+                                child: _buildTextField(
+                                  controller: _roleController,
+                                  labelText: 'Role',
+                                  validator: (value) => value!.isEmpty ? 'Enter your role' : null,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 30),
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _register,
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              backgroundColor: Colors.blueAccent,
+                            ),
+                            child: _isLoading
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : const Text('Register', style: TextStyle(fontSize: 18, color: Colors.white)),
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => LoginPage()),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: const Text('Go to Login', style: TextStyle(fontSize: 18)),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -361,6 +309,27 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String labelText,
+    bool obscureText = false,
+    bool readOnly = false,
+    FormFieldValidator<String>? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: labelText,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+      ),
+      obscureText: obscureText,
+      readOnly: readOnly,
+      validator: validator,
     );
   }
 }
