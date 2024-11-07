@@ -6,7 +6,7 @@ class EmployeeModel {
   final String password;
   final String name;
   final String phone;
-  final DateTime dob;
+  final dob;
   final int age;
   final String ssn;
   final String address;

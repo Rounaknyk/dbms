@@ -4,6 +4,40 @@ import 'models/department_model.dart';
 import 'models/employee_model.dart';
 import 'models/staff_model.dart';
 
+/*
+DATABASE SCHEMA:
+
+here's employee schema database mysql xampp: localhost/dummy/Employee/ http://localhost/phpmyadmin/index.php?route=/table/sql&db=dummy&table=Employee Your SQL query has been executed successfully. desc Employee; id int(11) NO PRI NULL auto_increment name varchar(100) NO NULL email varchar(100) NO UNI NULL password varchar(255) NO NULL phone varchar(20) YES NULL age int(11) YES NULL ssn varchar(100) NO NULL address text YES NULL salary int(11) YES NULL role varchar(100) NO NULL dob varchar(100) NO NULL created_at timestamp NO current_timestamp() updated_at timestamp NO current_timestamp() on update current_timestamp()
+
+this is staff schema: localhost/dummy/Staff/ http://localhost/phpmyadmin/index.php?route=/table/sql&db=dummy&table=Staff Your SQL query has been executed successfully. desc Staff; staff_id bigint(20) NO PRI NULL staff_name varchar(255) NO NULL department varchar(255) NO NULL created_at timestamp NO current_timestamp()
+
+this is staff_emoployee shema: localhost/dummy/Staff/
+localhost/dummy/Staff_Employees/        http://localhost/phpmyadmin/index.php?route=/table/sql&db=dummy&table=Staff_Employees
+Your SQL query has been executed successfully.
+desc Staff_Employees;
+id    int(11)    NO    PRI    NULL    auto_increment
+staff_id    bigint(20)    YES    MUL    NULL
+employee_id    int(11)    YES    MUL    NULL
+is_manager    tinyint(1)    YES        0
+
+
+this is department schema: localhost/dummy/Department/ http://localhost/phpmyadmin/index.php?route=/table/sql&db=dummy&table=Department Your SQL query has been executed successfully. desc Department; id int(11) NO PRI NULL auto_increment name varchar(50) NO NULL
+
+this is leave requests schema:
+localhost/dummy/leave_requests/		http://localhost/phpmyadmin/index.php?route=/table/sql&db=dummy&table=leave_requests
+Your SQL query has been executed successfully.
+
+desc leave_requests;
+id	int(11)	NO	PRI	NULL	auto_increment
+employee_id	int(11)	YES	MUL	NULL
+staff_id	bigint(20)	YES	MUL	NULL
+reason	text	YES		NULL
+status	enum('Pending','Approved','Rejected')	YES		Pending
+created_at	timestamp	NO		current_timestamp()
+updated_at	timestamp	NO		current_timestamp()	on update current_timestamp()
+
+ */
+
 final baseUrl = 'http://localhost/dbms/php/';
 
 final List<EmployeeModel> dummyEmployeeModels = [

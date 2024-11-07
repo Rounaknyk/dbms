@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../constants.dart';
+import 'employee_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
@@ -46,10 +47,11 @@ class _LoginPageState extends State<LoginPage> {
             // await prefs.setString('user_id', data['user_id'].toString());
 
             // Navigate to home page
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const AdminPage()),
-            );
+            // Navigator.pushReplacement(
+            //   context,
+            //   MaterialPageRoute(builder: (context) => const AdminPage()),
+            // );
+            Navigator.push(context, MaterialPageRoute(builder: (context)=> EmployeeDetails(email: _emailController.text)));
 
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -161,6 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: (){
+
                         Navigator.push(context, MaterialPageRoute(builder: (context)=> AdminPage()));
                       },
                       style: ElevatedButton.styleFrom(

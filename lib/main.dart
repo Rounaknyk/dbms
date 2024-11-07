@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dbms/pages/admin_page.dart';
+import 'package:dbms/pages/employee_page.dart';
 import 'package:dbms/pages/login_page.dart';
 import 'package:dbms/pages/register_page.dart';
 import 'package:flutter/material.dart';
@@ -23,7 +24,7 @@ class MyApp extends StatelessWidget {
       // home: LoginPage(),
       initialRoute: '/',
       routes: {
-        '/' : (context) => AdminPage()
+        '/' : (context) => LoginPage()
       },
     );
   }

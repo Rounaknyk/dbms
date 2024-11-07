@@ -8,31 +8,71 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import '../models/department_model.dart';
+
 class StaffService {
+  // static Future<bool> createStaff(StaffModel staff) async {
+  //   try {
+  //     final response = await http.post(
+  //       Uri.parse('${baseUrl}create_staff.php'),
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({
+  //         'staffId': staff.staffId,
+  //         'staffName': staff.staffName,
+  //         'department': staff.department,
+  //         'employees': staff.empList.map((emp) => {
+  //           'employee_id': emp.id,
+  //           'isManager': emp.isManager,
+  //         }).toList(),
+  //       }),
+  //     );
+  //
+  //     final data = jsonDecode(response.body);
+  //     return data['status'] == 'success';
+  //   } catch (e) {
+  //     print('Error creating staff: $e');
+  //     return false;
+  //   }
+  // }
+// New method to get all staff
+
   static Future<bool> createStaff(StaffModel staff) async {
+
+    print(staff.empList.length);
+    print(("e"));
     try {
+      final jsonBody = json.encode({
+        'staff_id': staff.staffId,
+        'staff_name': staff.staffName,
+        'department': staff.department,
+        'employees': staff.empList.map((emp) => ({
+          'id': emp.id,
+          'is_manager': emp.isManager,
+        })).toList(),
+      });
+
+      print('Sending JSON: $jsonBody'); // Debug print
+
       final response = await http.post(
-        Uri.parse('${baseUrl}staff_creation.php'),
+        Uri.parse('${baseUrl}create_staff.php'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'staffId': staff.staffId,
-          'staffName': staff.staffName,
-          'department': staff.department,
-          'employees': staff.empList.map((emp) => {
-            'employee_id': emp.id,
-            'isManager': emp.isManager,
-          }).toList(),
-        }),
+        body: jsonBody,
       );
 
-      final data = jsonDecode(response.body);
-      return data['status'] == 'success';
+      print('Response status: ${response.statusCode}'); // Debug print
+      print('Response body: ${response.body}'); // Debug print
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        return result['success'] == true;
+      }
+
+      return false;
     } catch (e) {
       print('Error creating staff: $e');
       return false;
     }
   }
-// New method to get all staff
   static Future<List<StaffModel>> getAllStaff() async {
     try {
       final response = await http.get(
@@ -48,13 +88,18 @@ class StaffService {
         return (data['data'] as List).map((staffData) {
           List<EmployeeModel> employees = [];
           for (var emp in staffData['employees']) {
-            print(emp['employee_id']);
+            print(emp['id']);
+
             employees.add(EmployeeModel(
-              id: emp['employee_id'],
-              isManager: emp['isManager'], email: emp['email'], password: emp['password'], name: emp['name'], phone: emp['phome'].toString(), dob: emp['dob'], age: emp['age'], ssn: emp['ssn'], address: emp['address'], salary: emp['salary'], role: emp['role'],
+              id: int.parse(emp['id']),
+              isManager: emp['isManager'], email: emp['email'], password: '', name: emp['name'], phone: emp['phone'].toString(), dob: emp['dob'], age: int.parse(emp['age']), ssn: emp['ssn'], address: emp['address'], salary: double.parse(emp['salary']), role: emp['role'],
               // You may need to add other fields based on your EmployeeModel
             ));
           }
+
+          print(int.parse(staffData['staffId'].toString()));
+          print(staffData['staffName']);
+          print(staffData['department']);
           return StaffModel(
             staffId: int.parse(staffData['staffId'].toString()),
             staffName: staffData['staffName'],
@@ -91,6 +136,73 @@ class _AdminPageState extends State<AdminPage> {
   List<EmployeeModel> addedEmpolyee = [];
   EmployeeModel? selectedEmployee = null;
   List<Widget> staffList = [];
+  List<DepartmentModel> departments = [];
+  List<EmployeeModel> employees = [];
+  bool isLoading = false;
+  String? error;
+
+
+  Future<void> fetchData() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
+
+    try {
+      // Fetch departments
+      final deptResponse = await http.get(
+          Uri.parse('${baseUrl}get_departments.php')
+      );
+
+      if (deptResponse.statusCode == 200) {
+        final deptJson = json.decode(deptResponse.body);
+        if (deptJson['success']) {
+          departments = (deptJson['data'] as List)
+              .map((dept) => DepartmentModel(
+            name: dept['name'],
+            managerId: dept['manager_id'],
+          ))
+              .toList();
+        }
+      }
+
+      // Fetch employees
+      final empResponse = await http.get(
+          Uri.parse('${baseUrl}get_employees.php')
+      );
+
+      if (empResponse.statusCode == 200) {
+        final empJson = json.decode(empResponse.body);
+        if (empJson['success']) {
+          employees = (empJson['data'] as List).map((emp) => EmployeeModel(
+              id: emp['id'],
+              email: emp['email'],
+              password: '', // We don't receive password from API
+              name: emp['name'],
+              phone: emp['phone'] ?? '',
+              dob: emp['dob'],
+              age: emp['age'] ?? 0,
+              ssn: emp['ssn'],
+              address: emp['address'] ?? '',
+              salary: emp['salary']?.toDouble() ?? 0.0,
+              role: emp['role'],
+              department: null, // Since we don't have department information
+              isManager: false // Default value since we don't have this information
+          )).toList();
+        }
+      }
+      print(employees.first.name);
+    } catch (e) {
+      setState(() {
+        print(e.toString());
+        // error = e.toString();
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
 
   addStaffDialog(){
@@ -136,7 +248,7 @@ class _AdminPageState extends State<AdminPage> {
                         ),
                       ),
                       SizedBox(height: 16.0,),
-                      DropdownMenu(dropdownMenuEntries: dummyDepartments.map((e){
+                      DropdownMenu(dropdownMenuEntries: departments.map((e){
 
                         return DropdownMenuEntry(value: e.name, label: e.name);
                       }).toList(), hintText: 'Choose Department', onSelected: (value){
@@ -148,7 +260,7 @@ class _AdminPageState extends State<AdminPage> {
                       SizedBox(height: 16.0,),
                       Row(
                         children: [
-                          DropdownMenu(dropdownMenuEntries: dummyEmployeeModels.map((e){
+                          DropdownMenu(dropdownMenuEntries: employees.map((e){
 
                             return DropdownMenuEntry(value: e, label: e.name);
                           }).toList(),hintText: 'Choose Employee', onSelected: (value){
@@ -306,7 +418,7 @@ class _AdminPageState extends State<AdminPage> {
     });
   }
 
-  bool isLoading = false;
+  // bool isLoading = false;
 
   Future<void> loadStaffData() async {
     setState(() {
@@ -408,6 +520,8 @@ class _AdminPageState extends State<AdminPage> {
     Timer(Duration(seconds: 1), (){
       loadStaffData();
     });
+
+    fetchData();
 
     // initCards(context);
   }
