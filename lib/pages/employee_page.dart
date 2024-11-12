@@ -547,9 +547,41 @@ class _EmployeeDetailsState extends State<EmployeeDetails> {
     );
   }
 
+  Future<void> deleteEmployee(int employeeId) async {
+    final String url = 'http://localhost/delete_employee.php';  // Replace with actual server URL
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        body: {
+          'id': employeeId.toString(),  // Pass the employee ID as a POST parameter
+        },
+      );
+
+      // Decode the response
+      final Map<String, dynamic> responseData = json.decode(response.body);
+
+      if (responseData['success']) {
+        print(responseData['message']);
+        // Optionally, show success message to user or refresh UI
+      } else {
+        print(responseData['message']);
+        // Optionally, show error message to user
+      }
+    } catch (e) {
+      print("Error: $e");
+      // Optionally, show error message to user
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(onPressed: () async {
+        await deleteEmployee(_data!['employee']?['id']);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Account deleted!')));
+        Navigator.pop(context);
+      }, child: Icon(Icons.delete),),
       appBar: AppBar(
         title: Text('Employee Details'),
         backgroundColor: Colors.blueAccent,
